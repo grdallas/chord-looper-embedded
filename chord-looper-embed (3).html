@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chord Looper — Embed</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+
+  :root {
+    --paper: #f5f0e8;
+    --paper-dark: #ece4d0;
+    --ink: #1a1510;
+    --ink-light: #3d2e1e;
+    --ink-muted: #7a6a56;
+    --border: #c8b89a;
+    --amber: #c8841a;
+    --green: #1a5c2a;
+    --green-light: rgba(26, 92, 42, 0.08);
+    --active-bg: #fff9f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Libre Baskerville', serif;
+    min-height: 100vh;
+    padding: 32px 16px 48px;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(200,132,26,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 90%, rgba(139,32,32,0.03) 0%, transparent 50%),
+      var(--paper);
+  }
+
+  .app {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  header {
+    margin-bottom: 32px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  header h1 em {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  .header-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* CONTROLS BAR */
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .chord-count-btns {
+    display: flex;
+    gap: 4px;
+  }
+
+  .count-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--paper);
+    border-radius: 4px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .count-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* CHORD FILTER BUTTONS */
+  .chord-filter-btn {
+    padding: 10px 18px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink-muted);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+
+  .chord-filter-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .chord-filter-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .count-btn:hover:not(.active) {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .spacer { flex: 1; }
+
+  .btn-regenerate {
+    padding: 8px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 4px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .btn-regenerate:hover {
+    background: var(--amber);
+  }
+
+  /* MODE SECTION */
+  .mode-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+  }
+
+  .mode-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+
+  .mode-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 10px 12px;
+    background: transparent;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    color: var(--ink-muted);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.12s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .mode-btn:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .mode-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .mode-btn svg {
+    flex-shrink: 0;
+  }
+
+  .mode-hint {
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* PLAYBACK BAR */
+  .playback-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding: 12px 16px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+  }
+
+  .btn-play-stop {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: transparent;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+
+  .btn-play-stop:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn-play-stop.playing {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: var(--ink);
+  }
+
+  .btn-metronome {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: transparent;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    color: var(--ink-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-metronome:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .btn-metronome.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .tempo-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .tempo-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  input[type="range"].tempo-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+    min-width: 60px;
+  }
+
+  input[type="range"].tempo-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+  }
+
+  .tempo-value {
+    font-size: 0.72rem;
+    color: var(--ink);
+    min-width: 52px;
+    text-align: right;
+  }
+
+  /* CHORD GRID */
+  .chord-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 480px) {
+    .chord-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .chord-card {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    padding: 16px 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    position: relative;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    user-select: none;
+  }
+
+  .chord-card:hover {
+    border-color: var(--amber);
+    background: var(--active-bg);
+    transform: translateY(-2px);
+  }
+
+  .chord-card.active {
+    border-color: var(--amber);
+    background: var(--active-bg);
+    box-shadow: 0 0 0 2px var(--amber);
+  }
+  
+  .chord-card.loop-selected {
+    border-color: var(--green);
+    background: var(--green-light);
+    box-shadow: 0 0 0 2px var(--green);
+  }
+  
+  .chord-card.loop-start {
+    border-color: var(--amber);
+    background: rgba(200, 132, 26, 0.08);
+    box-shadow: 0 0 0 2px var(--amber);
+  }
+  
+  .chord-card.loop-selected.active {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 2px var(--amber), 0 4px 16px var(--shadow);
+  }
+
+  .chord-card.active::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: blink 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.3; }
+  }
+
+  .chord-number {
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--border);
+    position: absolute;
+    top: 7px;
+    right: 9px;
+  }
+
+  .chord-root {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .chord-quality {
+    font-size: 0.68rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .chord-card:hover .chord-root,
+  .chord-card.active .chord-root {
+    color: var(--amber);
+  }
+
+  /* HINT */
+  .hint {
+    font-size: 0.62rem;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+  }
+
+  /* SAVE BAR */
+  .save-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .btn-save {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1.5px solid var(--green);
+    border-radius: 4px;
+    color: var(--green);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+
+  .btn-save:hover {
+    background: var(--green-light);
+  }
+
+  .btn-save:active {
+    background: var(--green);
+    color: white;
+  }
+
+  .save-flash {
+    font-size: 0.65rem;
+    color: var(--green);
+    opacity: 0;
+    transition: opacity 0.3s;
+    letter-spacing: 0.08em;
+  }
+
+  .save-flash.show {
+    opacity: 1;
+  }
+
+  /* SAVED LOG */
+  .saved-section {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+
+  .saved-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .saved-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .btn-clear-all {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Libre Baskerville', serif;
+    transition: color 0.12s;
+  }
+
+  .btn-clear-all:hover { color: var(--amber); }
+
+  .saved-empty {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-family: 'Libre Baskerville', serif;
+    padding: 8px 0;
+  }
+
+  .saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .saved-item {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.12s;
+  }
+
+  .saved-item:hover {
+    border-color: var(--ink-muted);
+  }
+
+  .saved-chords {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .saved-chord-pill {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .saved-chord-pill .root { font-weight: 500; }
+  .saved-chord-pill .quality { color: var(--ink-muted); font-size: 0.62rem; }
+
+  .saved-item-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .btn-load, .btn-delete {
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .btn-load {
+    background: transparent;
+    border: 1px solid var(--ink-muted);
+    color: var(--ink-muted);
+  }
+
+  .btn-load:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .btn-delete {
+    background: transparent;
+    border: 1px solid var(--ink-faint);
+    color: var(--ink-faint);
+  }
+
+  .btn-delete:hover {
+    background: var(--accent-light);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  .saved-timestamp {
+    font-size: 0.58rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+
+  /* ── CHORD PICKER MODAL ─────────────────────────────────────────── */
+  .picker-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,21,16,0.55);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .picker-overlay.open { display: flex; }
+
+  .picker-modal {
+    background: var(--paper);
+    border: 1.5px solid var(--border);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 680px;
+    padding: 20px 20px 36px;
+    box-shadow: 0 -8px 40px rgba(26,21,16,0.2);
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
+  .picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .picker-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .picker-preview {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--amber);
+  }
+
+  .picker-close {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .picker-close:hover { border-color: var(--ink); color: var(--ink); }
+
+  .picker-section-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 14px 0 7px;
+  }
+
+  .picker-roots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+
+  .picker-root {
+    padding: 9px 4px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.1s;
+  }
+  .picker-root:hover { border-color: var(--ink); color: var(--ink); }
+  .picker-root.selected { background: var(--amber); border-color: var(--amber); color: white; }
+
+  .picker-qualities {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .picker-quality {
+    padding: 9px 4px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.63rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.1s;
+  }
+  .picker-quality:hover { border-color: var(--ink); color: var(--ink); }
+  .picker-quality.selected { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+  .picker-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .btn-picker-random {
+    flex: 1;
+    padding: 11px;
+    background: transparent;
+    border: 1.5px solid var(--amber);
+    border-radius: 4px;
+    color: var(--amber);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .btn-picker-random:hover { background: var(--accent-light); }
+
+  .btn-picker-done {
+    flex: 1;
+    padding: 11px;
+    background: var(--ink);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    color: var(--paper);
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .btn-picker-done:hover { background: var(--amber); border-color: var(--amber); }
+
+
+    /* ── Embed overrides ── */
+    body { padding: 0; margin: 0; background: var(--paper); min-height: unset; }
+    .app { padding: 0.75rem; max-width: 100%; border: none; box-shadow: none; }
+    .controls-bar { margin-bottom: 10px; gap: 6px; flex-wrap: wrap; }
+    .mode-section { margin-bottom: 8px; }
+    .mode-hint { display: none; }
+    .playback-bar { margin-bottom: 10px; padding: 8px 10px; gap: 8px; }
+    .chord-grid { gap: 4px; }
+    .chord-cell { min-height: 56px; font-size: 0.9rem; }
+    .chord-filter-btn { font-size: 0.72rem; padding: 4px 8px; }
+    .mode-btn { font-size: 0.72rem; padding: 5px 8px; }
+    .btn-regenerate { font-size: 0.75rem; padding: 5px 10px; }
+
+    </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="controls-bar">
+    <span class="ctrl-label">Bars</span>
+    <input type="range" id="barSlider" min="4" max="40" value="8" step="1" style="flex: 1; max-width: 300px; margin: 0 12px;" oninput="setChordCountFromSlider(this.value)">
+    <span id="barCount" style="font-size: 0.85rem; color: var(--ink); min-width: 32px; font-weight: 700;">8</span>
+    <div class="spacer"></div>
+    <button class="btn-regenerate" onclick="regenerateAll()">↺ New Progression</button>
+  </div>
+  
+  <div class="mode-section">
+    <div class="mode-label">Click Mode</div>
+    <div class="mode-buttons">
+      <button class="mode-btn active" id="modeRandom" onclick="setMode('random')">
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 2 L11 8 L17 9 L11 10 L9 16 L7 10 L1 9 L7 8 Z" stroke-linejoin="round"/>
+        </svg>
+        <span>Random</span>
+      </button>
+      <button class="mode-btn" id="modeEdit" onclick="setMode('edit')">
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 16 L6 12 L12 18 L16 14" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 2 L16 2 L16 8" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="16" y1="2" x2="6" y2="12" stroke-linecap="round"/>
+        </svg>
+        <span>Edit</span>
+      </button>
+      <button class="mode-btn" id="modeLoop" onclick="setMode('loop')">
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 6 L14 4 L4 4 L4 14 L6 14" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 6 L16 6 L16 2" fill="currentColor"/>
+          <path d="M8 12 L12 12 L12 8 L8 8 Z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Loop</span>
+      </button>
+    </div>
+    <p class="mode-hint" id="modeHint">tap a chord to randomize it</p>
+  </div>
+  
+  <div class="controls-bar" style="margin-bottom: 24px;">
+    <span class="ctrl-label">Chord Type</span>
+    <div style="display: flex; gap: 8px;">
+      <button class="chord-filter-btn active" data-filter="all" onclick="setChordFilter('all')">All Chords</button>
+      <button class="chord-filter-btn" data-filter="triads" onclick="setChordFilter('triads')">Triads Only</button>
+      <button class="chord-filter-btn" data-filter="7ths" onclick="setChordFilter('7ths')">7ths Only</button>
+      <button class="chord-filter-btn" data-filter="extensions" onclick="setChordFilter('extensions')">Extensions</button>
+    </div>
+  </div>
+
+  <div class="playback-bar">
+    <button class="btn-play-stop" id="btnPlayStop" onclick="togglePlay()">▶</button>
+    <div class="tempo-group">
+      <span class="tempo-label">Tempo</span>
+      <input type="range" class="tempo-slider" id="tempoSlider" min="40" max="160" value="60" oninput="updateTempo(this)">
+      <span class="tempo-value" id="tempoValue">60 bpm</span>
+    </div>
+    <button class="btn-metronome" id="btnMetronome" onclick="toggleMetronome()">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 2 L15 16 L3 16 Z" stroke-linejoin="round"/>
+        <line x1="9" y1="6" x2="12" y2="13" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="chord-grid" id="chordGrid"></div>
+
+</div>
+
+<!-- Chord Picker Modal -->
+<div class="picker-overlay" id="chordPicker" onclick="handleOverlayClick(event)">
+  <div class="picker-modal" onclick="event.stopPropagation()">
+    <div class="picker-header">
+      <span class="picker-title">Edit Chord</span>
+      <span class="picker-preview" id="pickerPreview">—</span>
+      <button class="picker-close" onclick="closePicker()">✕</button>
+    </div>
+
+    <div class="picker-section-label">Root</div>
+    <div class="picker-roots" id="pickerRoots"></div>
+
+    <div class="picker-section-label">Quality</div>
+    <div class="picker-qualities" id="pickerQualities"></div>
+
+    <div class="picker-actions">
+      <button class="btn-picker-random" onclick="pickerRandom()">↺ Random</button>
+      <button class="btn-picker-done" onclick="closePicker()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROOTS = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const ROOTS_PLAIN = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const QUALITIES = [
+  { name: 'Maj',    display: 'maj',     weight: 8, category: 'triad' },
+  { name: 'min',    display: 'min',     weight: 8, category: 'triad' },
+  { name: '7',      display: 'dom7',    weight: 7, category: '7th' },
+  { name: 'Maj7',   display: 'maj7',    weight: 6, category: '7th' },
+  { name: 'min7',   display: 'min7',    weight: 6, category: '7th' },
+  { name: 'ø7',     display: 'ø7',      weight: 3, category: '7th' },
+  { name: 'dim7',   display: 'dim7',    weight: 2, category: '7th' },
+  { name: 'mMaj7',  display: 'mMaj7',   weight: 2, category: '7th' },
+  { name: 'Maj7♯11',display: 'Maj7♯11', weight: 2, category: '7th' },
+  { name: '9',      display: 'dom9',    weight: 3, category: 'extended' },
+  { name: 'Maj9',   display: 'maj9',    weight: 3, category: 'extended' },
+  { name: 'min9',   display: 'min9',    weight: 3, category: 'extended' },
+  { name: 'Aug',    display: 'aug',     weight: 1, category: 'triad' },
+  { name: 'Sus4',   display: 'sus4',    weight: 2, category: 'triad' },
+  { name: 'Sus2',   display: 'sus2',    weight: 2, category: 'triad' },
+  { name: '13',     display: 'dom13',   weight: 2, category: 'extended' },
+  { name: 'min11',  display: 'min11',   weight: 2, category: 'extended' },
+  { name: '7alt',   display: 'alt',     weight: 2, category: '7th' },
+];
+
+// Build weighted pool
+function buildQualityPool() {
+  const QUALITY_POOL = [];
+  QUALITIES.forEach(q => {
+    let include = false;
+    if (chordFilter === 'all') include = true;
+    else if (chordFilter === 'triads' && q.category === 'triad') include = true;
+    else if (chordFilter === '7ths' && q.category === '7th') include = true;
+    else if (chordFilter === 'extensions' && q.category === 'extended') include = true;
+    
+    if (include) {
+      for (let i = 0; i < q.weight; i++) QUALITY_POOL.push(q);
+    }
+  });
+  return QUALITY_POOL;
+}
+
+function randomChord() {
+  const QUALITY_POOL = buildQualityPool();
+  if (QUALITY_POOL.length === 0) return { root: 0, quality: QUALITIES[0] }; // fallback
+  const root = Math.floor(Math.random() * 12);
+  const quality = QUALITY_POOL[Math.floor(Math.random() * QUALITY_POOL.length)];
+  return { root, quality };
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let audioCtx = null;
+let reverbNode = null;
+let activeOscillators = []; // track running oscs so we can stop them on chord change
+
+function getCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    reverbNode = createReverb(audioCtx);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function createReverb(ctx) {
+  const convolver = ctx.createConvolver();
+  const sampleRate = ctx.sampleRate;
+  const length = sampleRate * 2.5;
+  const impulse = ctx.createBuffer(2, length, sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.2);
+    }
+  }
+  convolver.buffer = impulse;
+  const reverbGain = ctx.createGain();
+  reverbGain.gain.value = 0.28;
+  convolver.connect(reverbGain);
+  reverbGain.connect(ctx.destination);
+  return convolver;
+}
+
+const CHORD_VOICINGS = {
+  'Maj':     [0, 4, 7, 12],
+  'min':     [0, 3, 7, 12],
+  '7':       [0, 4, 7, 10],
+  'Maj7':    [0, 4, 7, 11],
+  'min7':    [0, 3, 7, 10],
+  'ø7':      [0, 3, 6, 10],
+  'dim7':    [0, 3, 6, 9],
+  'mMaj7':   [0, 3, 7, 11],
+  'Maj7♯11': [0, 4, 6, 11],
+  '9':       [0, 4, 7, 10, 14],
+  'Maj9':    [0, 4, 7, 11, 14],
+  'min9':    [0, 3, 7, 10, 14],
+  'Aug':     [0, 4, 8, 12],
+  'Sus4':    [0, 5, 7, 12],
+  'Sus2':    [0, 2, 7, 12],
+  '13':      [0, 4, 7, 10, 14],
+  'min11':   [0, 3, 7, 10, 17],
+  '7alt':    [0, 4, 8, 10, 13],
+};
+
+function midiToHz(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function stopAllOscillators() {
+  activeOscillators.forEach(o => { try { o.stop(); } catch(e) {} });
+  activeOscillators = [];
+}
+
+function playChord(rootIdx, qualityName, durationSec) {
+  stopAllOscillators();
+  const ctx = getCtx();
+  const intervals = CHORD_VOICINGS[qualityName] || [0, 4, 7];
+  const rootMidi = 48 + rootIdx; // C3 base
+
+  const masterGain = ctx.createGain();
+  const now = ctx.currentTime;
+  const attackTime = 0.25; // slow, drone-like attack
+  masterGain.gain.setValueAtTime(0, now);
+  masterGain.gain.linearRampToValueAtTime(0.22, now + attackTime);
+  masterGain.gain.setValueAtTime(0.22, now + durationSec * 0.72);
+  masterGain.gain.linearRampToValueAtTime(0, now + durationSec);
+  masterGain.connect(ctx.destination);
+  masterGain.connect(reverbNode);
+
+  intervals.forEach((semis, i) => {
+    const freq = midiToHz(rootMidi + semis);
+    const voiceGain = ctx.createGain();
+    voiceGain.gain.value = i === 0 ? 0.7 : 0.45;
+    voiceGain.connect(masterGain);
+
+    // 3 detuned oscillators per voice for that lush chorus effect
+    [-8, 0, 8].forEach(detuneCents => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc.detune.value = detuneCents + (Math.random() - 0.5) * 3;
+
+      // Low-pass filter to soften the sawtooth
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1800;
+      filter.Q.value = 0.5;
+
+      osc.connect(filter);
+      filter.connect(voiceGain);
+      osc.start(now + i * 0.018); // very subtle strum
+      osc.stop(now + durationSec + 0.05);
+      activeOscillators.push(osc);
+    });
+  });
+}
+
+function playMetronomeClick(isDownbeat = false) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  
+  // Create a short, loud click
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.type = 'sine';
+  osc.frequency.value = isDownbeat ? 1200 : 800; // Higher pitch for downbeat
+  
+  gain.gain.setValueAtTime(0.8, now); // Loud enough to hear over chords
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+  
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  
+  osc.start(now);
+  osc.stop(now + 0.05);
+}
+
+// ── State ─────────────────────────────────────────────────────────────
+let chordCount = 8;
+let progression = [];
+let isPlaying = false;
+let currentBeat = -1;
+let beatTimer = null;
+let bpm = 60;
+let savedProgressions = JSON.parse(localStorage.getItem('chordLooper_saved') || '[]');
+let chordFilter = 'all'; // 'all', 'triads', '7ths'
+let loopStart = null;
+let loopEnd = null;
+let isDragging = false;
+let metronomeEnabled = false;
+let metronomeBeat = 0; // Track quarter note within the bar
+let clickMode = 'random'; // 'random', 'edit', 'loop'
+
+function setChordCount(n) {
+  chordCount = n;
+  document.getElementById('barSlider').value = n;
+  document.getElementById('barCount').textContent = n;
+  // Extend or trim progression
+  while (progression.length < n) progression.push(randomChord());
+  progression = progression.slice(0, n);
+  clearLoopSelection();
+  renderGrid();
+}
+
+function setChordCountFromSlider(n) {
+  n = parseInt(n);
+  chordCount = n;
+  document.getElementById('barCount').textContent = n;
+  // Extend or trim progression
+  while (progression.length < n) progression.push(randomChord());
+  progression = progression.slice(0, n);
+  clearLoopSelection();
+  renderGrid();
+}
+
+function setChordFilter(filter) {
+  chordFilter = filter;
+  document.querySelectorAll('.chord-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+}
+
+function setMode(mode) {
+  clickMode = mode;
+  
+  // Update button states
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('active');
+  
+  const hint = document.getElementById('modeHint');
+  
+  if (clickMode === 'random') {
+    hint.textContent = 'tap a chord to randomize it';
+  } else if (clickMode === 'edit') {
+    hint.textContent = 'tap a chord to choose it manually';
+  } else if (clickMode === 'loop') {
+    hint.textContent = 'tap start and end chords to set loop range';
+    clearLoopSelection();
+  }
+}
+
+function clearLoopSelection() {
+  loopStart = null;
+  loopEnd = null;
+  renderGrid();
+}
+
+function regenerateAll() {
+  progression = Array.from({ length: chordCount }, randomChord);
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('chordGrid');
+  // Responsive columns
+  const cols = chordCount <= 4 ? chordCount : chordCount <= 6 ? 3 : 4;
+  grid.style.gridTemplateColumns = `repeat(${Math.min(cols, chordCount)}, 1fr)`;
+
+  grid.innerHTML = '';
+  progression.forEach((chord, i) => {
+    const card = document.createElement('div');
+    let classes = 'chord-card';
+    if (i === currentBeat) classes += ' active';
+    
+    // Loop highlighting logic
+    if (loopStart !== null && loopEnd !== null) {
+      // Full range selected - green
+      const start = Math.min(loopStart, loopEnd);
+      const end = Math.max(loopStart, loopEnd);
+      if (i >= start && i <= end) classes += ' loop-selected';
+    } else if (loopStart !== null && loopEnd === null) {
+      // Only start selected - amber
+      if (i === loopStart) classes += ' loop-start';
+    }
+    
+    card.className = classes;
+    card.innerHTML = `
+      <span class="chord-number">${i + 1}</span>
+      <span class="chord-root">${ROOTS[chord.root]}</span>
+      <span class="chord-quality">${chord.quality.display}</span>
+    `;
+    card.onclick = () => swapChord(i);
+    
+    grid.appendChild(card);
+  });
+}
+
+function swapChord(index) {
+  if (clickMode === 'random') {
+    // Randomize the chord immediately
+    progression[index] = randomChord();
+    renderGrid();
+  } else if (clickMode === 'edit') {
+    // Open the picker to manually choose
+    openPicker(index);
+  } else if (clickMode === 'loop') {
+    // Set loop points - allow selecting start and end in any order
+    if (loopStart === null) {
+      // First click - set start
+      loopStart = index;
+      loopEnd = null;
+    } else if (loopEnd === null) {
+      // Second click - set end and auto-start playback from loop beginning
+      loopEnd = index;
+      renderGrid();
+      
+      // Stop if currently playing, then start fresh from loop beginning
+      if (isPlaying) {
+        stopLoop();
+      }
+      
+      // Start playback immediately from the loop start
+      setTimeout(() => {
+        startLoop();
+      }, 50);
+      return; // Exit early since we're starting playback
+    } else {
+      // Already have a range - start new selection
+      loopStart = index;
+      loopEnd = null;
+    }
+    renderGrid();
+  }
+}
+
+// ── Chord Picker ──────────────────────────────────────────────────────
+let pickerIndex = null;
+
+function openPicker(index) {
+  pickerIndex = index;
+  const chord = progression[index];
+  const modal = document.getElementById('chordPicker');
+
+  // Highlight current root
+  document.querySelectorAll('.picker-root').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.root) === chord.root);
+  });
+  // Highlight current quality
+  document.querySelectorAll('.picker-quality').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.quality === chord.quality.name);
+  });
+
+  modal.classList.add('open');
+}
+
+function closePicker() {
+  document.getElementById('chordPicker').classList.remove('open');
+  pickerIndex = null;
+}
+
+function pickerSetRoot(rootIdx) {
+  document.querySelectorAll('.picker-root').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.root) === rootIdx);
+  });
+  if (pickerIndex !== null) {
+    progression[pickerIndex] = { ...progression[pickerIndex], root: rootIdx };
+    updatePickerPreview();
+  }
+}
+
+function pickerSetQuality(qualityName) {
+  const quality = QUALITIES.find(q => q.name === qualityName);
+  if (!quality || pickerIndex === null) return;
+  document.querySelectorAll('.picker-quality').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.quality === qualityName);
+  });
+  progression[pickerIndex] = { ...progression[pickerIndex], quality };
+  updatePickerPreview();
+}
+
+function pickerRandom() {
+  if (pickerIndex === null) return;
+  progression[pickerIndex] = randomChord();
+  const chord = progression[pickerIndex];
+  document.querySelectorAll('.picker-root').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.root) === chord.root);
+  });
+  document.querySelectorAll('.picker-quality').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.quality === chord.quality.name);
+  });
+  updatePickerPreview();
+}
+
+function updatePickerPreview() {
+  if (pickerIndex === null) return;
+  const chord = progression[pickerIndex];
+  document.getElementById('pickerPreview').textContent = `${ROOTS[chord.root]} ${chord.quality.display}`;
+  renderGrid();
+}
+
+function updateTempo(input) {
+  bpm = parseInt(input.value);
+  document.getElementById('tempoValue').textContent = `${bpm} bpm`;
+  if (isPlaying) {
+    clearTimeout(beatTimer);
+    // Let current chord finish naturally — just update bpm for next advance
+    // Actually restart from next beat immediately
+    isPlaying = false;
+    startLoop();
+  }
+}
+
+function toggleMetronome() {
+  metronomeEnabled = !metronomeEnabled;
+  const btn = document.getElementById('btnMetronome');
+  btn.classList.toggle('active', metronomeEnabled);
+  
+  // If currently playing, sync metronome with current position
+  if (isPlaying && metronomeEnabled) {
+    const msPerBeat = (60 / bpm) * 1000;
+    scheduleMetronomeBeats(msPerBeat);
+  } else if (!metronomeEnabled) {
+    stopMetronomeClicks();
+  }
+}
+
+function stopMetronomeClicks() {
+  if (window.metronomeTimer) {
+    clearTimeout(window.metronomeTimer);
+    window.metronomeTimer = null;
+  }
+  if (window.metronomeTimers) {
+    window.metronomeTimers.forEach(timer => clearTimeout(timer));
+    window.metronomeTimers = [];
+  }
+}
+
+function togglePlay() {
+  isPlaying ? stopLoop() : startLoop();
+}
+
+function startLoop() {
+  isPlaying = true;
+  const btn = document.getElementById('btnPlayStop');
+  btn.textContent = '■';
+  btn.classList.add('playing');
+
+  const msPerBeat = (60 / bpm) * 1000;
+  const msPerChord = msPerBeat * 4; // 4 beats per chord = one full bar
+  const secPerChord = msPerChord / 1000;
+  
+  // Determine loop range
+  let loopRangeStart = 0;
+  let loopRangeEnd = chordCount - 1;
+  if (loopStart !== null && loopEnd !== null) {
+    loopRangeStart = Math.min(loopStart, loopEnd);
+    loopRangeEnd = Math.max(loopStart, loopEnd);
+  }
+
+  // Store the time when each chord starts for metronome sync
+  let chordStartTime = Date.now();
+
+  function advance() {
+    currentBeat = currentBeat + 1;
+    // Wrap within loop range
+    if (currentBeat > loopRangeEnd) {
+      currentBeat = loopRangeStart;
+    }
+    renderGrid();
+    const chord = progression[currentBeat];
+    playChord(chord.root, chord.quality.name, secPerChord * 0.95);
+    
+    // Update chord start time and restart metronome clicks in sync
+    chordStartTime = Date.now();
+    if (metronomeEnabled) {
+      stopMetronomeClicks();
+      scheduleMetronomeBeats(msPerBeat);
+    }
+    
+    beatTimer = setTimeout(advance, msPerChord);
+  }
+
+  currentBeat = loopRangeStart - 1;
+  advance();
+}
+
+function scheduleMetronomeBeats(msPerBeat) {
+  if (!metronomeEnabled || !isPlaying) return;
+  
+  // Schedule 4 beats (one bar)
+  for (let beat = 0; beat < 4; beat++) {
+    const delay = beat * msPerBeat;
+    const timer = setTimeout(() => {
+      if (!isPlaying || !metronomeEnabled) return;
+      playMetronomeClick(beat === 0); // Downbeat on beat 0
+    }, delay);
+    
+    // Store the timer so we can clear it
+    if (!window.metronomeTimers) window.metronomeTimers = [];
+    window.metronomeTimers.push(timer);
+  }
+}
+
+function stopLoop() {
+  isPlaying = false;
+  clearTimeout(beatTimer);
+  beatTimer = null;
+  stopMetronomeClicks();
+  currentBeat = -1;
+  const btn = document.getElementById('btnPlayStop');
+  btn.textContent = '▶';
+  btn.classList.remove('playing');
+  renderGrid();
+}
+
+// SAVE
+function saveProgression() {
+  const entry = {
+    id: Date.now(),
+    chords: progression.map(c => ({ root: c.root, quality: c.quality.name })),
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+  savedProgressions.unshift(entry);
+  localStorage.setItem('chordLooper_saved', JSON.stringify(savedProgressions));
+  renderSaved();
+
+  const flash = document.getElementById('saveFlash');
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 1500);
+}
+
+function loadProgression(id) {
+  const entry = savedProgressions.find(e => e.id === id);
+  if (!entry) return;
+  chordCount = entry.chords.length;
+  progression = entry.chords.map(c => ({
+    root: c.root,
+    quality: QUALITIES.find(q => q.name === c.quality) || QUALITIES[0]
+  }));
+  // Update count buttons
+  document.querySelectorAll('.count-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.n) === chordCount);
+  });
+  renderGrid();
+}
+
+function deleteProgression(id) {
+  savedProgressions = savedProgressions.filter(e => e.id !== id);
+  localStorage.setItem('chordLooper_saved', JSON.stringify(savedProgressions));
+  renderSaved();
+}
+
+function clearAll() {
+  if (savedProgressions.length === 0) return;
+  savedProgressions = [];
+  localStorage.setItem('chordLooper_saved', JSON.stringify(savedProgressions));
+  renderSaved();
+}
+
+function renderSaved() {
+  const container = document.getElementById('savedList');
+  if (!container) return; // saved-progressions UI isn't in the DOM (yet)
+  if (savedProgressions.length === 0) {
+    container.innerHTML = '<p class="saved-empty">Nothing saved yet.</p>';
+    return;
+  }
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'saved-list';
+  savedProgressions.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'saved-item';
+    const chordsHtml = entry.chords.map(c => {
+      const q = QUALITIES.find(q => q.name === c.quality);
+      const display = q ? q.display : c.quality;
+      return `<span class="saved-chord-pill"><span class="root">${ROOTS[c.root]}</span><span class="quality"> ${display}</span></span>`;
+    }).join('');
+    item.innerHTML = `
+      <div style="flex:1">
+        <div class="saved-chords">${chordsHtml}</div>
+        <div class="saved-timestamp">${entry.timestamp}</div>
+      </div>
+      <div class="saved-item-actions">
+        <button class="btn-load" onclick="loadProgression(${entry.id})">Load</button>
+        <button class="btn-delete" onclick="deleteProgression(${entry.id})">✕</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+  container.appendChild(list);
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('chordPicker')) closePicker();
+}
+
+function initPicker() {
+  // Build root buttons
+  const rootsEl = document.getElementById('pickerRoots');
+  ROOTS.forEach((name, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'picker-root';
+    btn.dataset.root = i;
+    btn.textContent = name;
+    btn.onclick = () => pickerSetRoot(i);
+    rootsEl.appendChild(btn);
+  });
+
+  // Build quality buttons
+  const qualEl = document.getElementById('pickerQualities');
+  QUALITIES.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'picker-quality';
+    btn.dataset.quality = q.name;
+    btn.textContent = q.display;
+    btn.onclick = () => pickerSetQuality(q.name);
+    qualEl.appendChild(btn);
+  });
+}
+
+// Init
+progression = Array.from({ length: chordCount }, randomChord);
+renderGrid();
+renderSaved();
+initPicker();
+document.getElementById('barSlider').value = chordCount;
+document.getElementById('barCount').textContent = chordCount;
+
+// ── URL Parameter Loader ──────────────────────────────────────────────────
+(function applyUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    // BPM
+    const bpmParam = params.get('bpm');
+    if (bpmParam) {
+        bpm = parseInt(bpmParam);
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmVal = document.getElementById('bpmVal');
+        if (bpmSlider) bpmSlider.value = bpm;
+        if (bpmVal) bpmVal.textContent = bpm;
+    }
+
+    // Bars
+    const barsParam = params.get('bars');
+    if (barsParam) {
+        const n = parseInt(barsParam);
+        chordCount = n;
+        const barSlider = document.getElementById('barSlider');
+        const barCount = document.getElementById('barCount');
+        if (barSlider) barSlider.value = n;
+        if (barCount) barCount.textContent = n;
+    }
+
+    // Filter
+    const filterParam = params.get('filter');
+    if (filterParam) setChordFilter(filterParam);
+
+    // Mode
+    const modeParam = params.get('mode');
+    if (modeParam) {
+        clickMode = modeParam;
+        document.querySelectorAll('.mode-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === modeParam);
+        });
+    }
+
+    // Chords — format: Cm7,F7,Bbmaj7,Ebmaj7
+    const chordsParam = params.get('chords');
+    if (chordsParam) {
+        const chordStrings = chordsParam.split(',').map(s => s.trim()).filter(Boolean);
+
+        // Root name to index mapping
+        const rootMap = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        };
+
+        // Quality string to QUALITIES name mapping
+        const qualityMap = {
+            'maj': 'Maj', 'major': 'Maj', 'M': 'Maj',
+            'min': 'min', 'minor': 'min', 'm': 'min',
+            '7': '7', 'dom7': '7', 'dominant': '7',
+            'maj7': 'Maj7', 'M7': 'Maj7',
+            'min7': 'min7', 'm7': 'min7',
+            'dim7': 'dim7', 'o7': 'dim7',
+            'ø7': 'ø7', 'half-dim': 'ø7', 'm7b5': 'ø7',
+            'mmaj7': 'mMaj7', 'mM7': 'mMaj7',
+            'maj7#11': 'Maj7♯11', 'Maj7#11': 'Maj7♯11',
+            '9': '9', 'dom9': '9',
+            'maj9': 'Maj9', 'M9': 'Maj9',
+            'min9': 'min9', 'm9': 'min9',
+            'aug': 'Aug', '+': 'Aug',
+            'sus4': 'Sus4', 'sus': 'Sus4',
+            'sus2': 'Sus2',
+            '13': '13', 'dom13': '13',
+            'min11': 'min11', 'm11': 'min11',
+            'alt': '7alt', '7alt': '7alt'
+        };
+
+        function parseChordString(str) {
+            // Try to parse root + quality from a chord string like Cm7, F7, Bbmaj7
+            // First find root (1-2 chars + optional b/#)
+            const rootMatch = str.match(/^([A-G][b#]?)/);
+            if (!rootMatch) return null;
+            const rootStr = rootMatch[1];
+            const rootIdx = rootMap[rootStr];
+            if (rootIdx === undefined) return null;
+
+            // Rest is quality
+            let qualStr = str.slice(rootStr.length).trim();
+            if (qualStr === '' || qualStr.toLowerCase() === 'maj' || qualStr === 'M') qualStr = 'Maj';
+
+            // Look up quality
+            const qualName = qualityMap[qualStr] || qualityMap[qualStr.toLowerCase()];
+            const quality = QUALITIES.find(q => q.name === qualName);
+            if (!quality) {
+                // Default to dom7 if unrecognized
+                return { root: rootIdx, quality: QUALITIES.find(q => q.name === '7') || QUALITIES[0] };
+            }
+            return { root: rootIdx, quality };
+        }
+
+        const parsed = chordStrings.map(parseChordString).filter(Boolean);
+        if (parsed.length > 0) {
+            chordCount = parsed.length;
+            progression = parsed;
+            const barSlider = document.getElementById('barSlider');
+            const barCount = document.getElementById('barCount');
+            if (barSlider) barSlider.value = chordCount;
+            if (barCount) barCount.textContent = chordCount;
+            renderGrid();
+        }
+    }
+})();
+
+</script>
+</body>
+</html>
