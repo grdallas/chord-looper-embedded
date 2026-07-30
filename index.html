@@ -906,11 +906,54 @@ function playWurlyVoice(ctx, freq, startAt, stopAt, dest) {
   activeOscillators.push(sub);
 }
 
+// Builds a compact, closed-position "right hand" voicing instead of a raw
+// root-position stack. Raw interval stacking (root + 0,4,7,10,14...) spreads
+// a 9th or 11th chord two octaves wide while the root stays anchored low —
+// real comping never does this; it's exactly the "lower interval limit"
+// problem (wide intervals read as muddy/wrong down low, so a player inverts
+// instead of reaching for a two-octave handful). Each voice above the root
+// is placed at the nearest octave above the previous one (closed position,
+// centered on a comfortable comping register), then if the whole voicing
+// still spans more than an octave and a half, the lowest voice folds up an
+// octave — the actual inversion move a real player makes — until it fits.
+const CHORD_VOICING_TARGET_CENTER = 60; // middle C — comping register, not down where the bass lives
+const CHORD_VOICING_MAX_SPAN = 18; // an octave and a half
+
+function buildCompactVoicing(rootIdx, qualityName) {
+  const intervals = CHORD_VOICINGS[qualityName] || [0, 4, 7];
+  const pitchClasses = intervals.map(i => ((rootIdx + i) % 12 + 12) % 12);
+
+  let rootNote = pitchClasses[0];
+  while (rootNote < CHORD_VOICING_TARGET_CENTER - 6) rootNote += 12;
+  while (rootNote > CHORD_VOICING_TARGET_CENTER + 6) rootNote -= 12;
+
+  const notes = [{ midi: rootNote, isRoot: true }];
+  let cursor = rootNote;
+  for (let k = 1; k < pitchClasses.length; k++) {
+    let note = pitchClasses[k];
+    while (note <= cursor) note += 12;
+    notes.push({ midi: note, isRoot: false });
+    cursor = note;
+  }
+
+  let guard = 0;
+  while (guard < notes.length) {
+    const midis = notes.map(n => n.midi);
+    if (Math.max(...midis) - Math.min(...midis) <= CHORD_VOICING_MAX_SPAN) break;
+    let lowestIdx = 0;
+    for (let k = 1; k < notes.length; k++) if (notes[k].midi < notes[lowestIdx].midi) lowestIdx = k;
+    notes[lowestIdx].midi += 12;
+    guard++;
+  }
+
+  notes.sort((a, b) => a.midi - b.midi);
+  return notes;
+}
+
 function playChord(rootIdx, qualityName, durationSec) {
   stopAllOscillators();
   const ctx = getCtx();
-  const intervals = CHORD_VOICINGS[qualityName] || [0, 4, 7];
-  const rootMidi = 48 + rootIdx; // C3 base
+  const rootMidi = 48 + rootIdx; // C3 base — bass register only, unrelated to the chord voicing below
 
   const masterGain = ctx.createGain();
   const now = ctx.currentTime;
@@ -931,12 +974,13 @@ function playChord(rootIdx, qualityName, durationSec) {
   masterGain.connect(ctx.destination);
   masterGain.connect(reverbNode);
 
-  intervals.forEach((semis, i) => {
-    const freq = midiToHz(rootMidi + semis);
+  const voicing = buildCompactVoicing(rootIdx, qualityName);
+  voicing.forEach((note, i) => {
+    const freq = midiToHz(note.midi);
     const voiceGain = ctx.createGain();
-    voiceGain.gain.value = i === 0 ? 0.7 : 0.45;
+    voiceGain.gain.value = note.isRoot ? 0.7 : 0.45;
     voiceGain.connect(masterGain);
-    const startAt = now + i * 0.018; // very subtle strum
+    const startAt = now + i * 0.018; // very subtle strum, low to high
     const stopAt = now + durationSec + 0.05;
 
     playWurlyVoice(ctx, freq, startAt, stopAt, voiceGain);
