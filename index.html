@@ -266,6 +266,28 @@
     color: var(--ink-muted);
   }
 
+  /* Shared style for typed-text inputs (AI prompt box, typed chord entry) —
+     a stronger border and a clear focus glow so they read unmistakably as
+     "type here" rather than a static label at a glance. */
+  .text-input-field {
+    padding: 7px 10px;
+    border: 1.5px solid var(--ink);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .text-input-field::placeholder {
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+  .text-input-field:focus {
+    outline: none;
+    border-color: var(--amber);
+    box-shadow: 0 0 0 3px rgba(200, 132, 26, 0.15);
+  }
+
   /* CHORD GRID */
   .chord-grid {
     display: grid;
@@ -730,7 +752,7 @@
   <div class="controls-bar" style="margin-bottom: 8px; flex-wrap: wrap;">
     <span class="ctrl-label">Generate a Progression</span>
     <div style="display: flex; gap: 8px; flex: 1; min-width: 240px;">
-      <input type="text" id="aiProgressionPrompt" placeholder="e.g. a minor blues in Bb, rhythm changes bridge, a ii-V-I in three keys..." style="flex: 1; padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 3px; font-family: inherit; font-size: 0.85rem; color: var(--ink); background: var(--paper);" onkeydown="if(event.key==='Enter') generateProgressionFromPrompt();">
+      <input type="text" id="aiProgressionPrompt" class="text-input-field" placeholder="e.g. a minor blues in Bb, rhythm changes bridge, a ii-V-I in three keys..." style="flex: 1;" onkeydown="if(event.key==='Enter') generateProgressionFromPrompt();">
       <button class="chord-filter-btn" id="aiProgressionBtn" onclick="generateProgressionFromPrompt()">Generate</button>
     </div>
   </div>
@@ -790,6 +812,13 @@
       <button class="chord-filter-btn" id="pickerHalfBtn2" onclick="pickerSetActiveHalf(2)">2nd half</button>
     </div>
 
+    <div class="picker-section-label">Or type it</div>
+    <div style="display:flex; gap:8px; margin-bottom:6px;">
+      <input type="text" id="pickerTypedChord" class="text-input-field" placeholder="e.g. Cmaj7#11, Bb7b9, Am6/9" style="flex:1;" onkeydown="if(event.key==='Enter') pickerApplyTypedChord();">
+      <button class="chord-filter-btn" onclick="pickerApplyTypedChord()">Set</button>
+    </div>
+    <div id="pickerTypedStatus" style="display:none; font-size:0.68rem; color:var(--ink-muted); font-style:italic; margin-bottom:10px;"></div>
+
     <div class="picker-section-label">Root</div>
     <div class="picker-roots" id="pickerRoots"></div>
 
@@ -827,6 +856,21 @@ const QUALITIES = [
   { name: '13',     display: 'dom13',   weight: 2, category: 'extended' },
   { name: 'min11',  display: 'min11',   weight: 2, category: 'extended' },
   { name: '7alt',   display: 'alt',     weight: 2, category: '7th' },
+  // Tensions/alterations — a real, professional-level vocabulary rather
+  // than just the base 7th/extended qualities above.
+  { name: '7♭9',     display: '7♭9',     weight: 2, category: 'altered' },
+  { name: '7♯9',     display: '7♯9',     weight: 2, category: 'altered' },
+  { name: '7♯11',    display: '7♯11',    weight: 2, category: 'altered' },
+  { name: '9♯11',    display: '9♯11',    weight: 2, category: 'extended' },
+  { name: '13♯11',   display: '13♯11',   weight: 1, category: 'extended' },
+  { name: '7♯5',     display: '7♯5',     weight: 1, category: 'altered' },
+  { name: 'Maj7♯5',  display: 'maj7♯5',  weight: 1, category: '7th' },
+  { name: 'Maj9♯11', display: 'maj9♯11', weight: 2, category: 'extended' },
+  { name: 'm6/9',    display: 'm6/9',    weight: 2, category: 'extended' },
+  { name: 'mMaj9',   display: 'mMaj9',   weight: 1, category: 'extended' },
+  { name: 'ø9',      display: 'ø9',      weight: 1, category: 'extended' },
+  { name: '9sus4',   display: '9sus4',   weight: 1, category: 'extended' },
+  { name: '13sus4',  display: '13sus4',  weight: 1, category: 'extended' },
 ];
 
 // Build weighted pool
@@ -895,9 +939,23 @@ const CHORD_VOICINGS = {
   'Aug':     [0, 4, 8, 12],
   'Sus4':    [0, 5, 7, 12],
   'Sus2':    [0, 2, 7, 12],
-  '13':      [0, 4, 7, 10, 14],
+  '13':      [0, 4, 7, 10, 14, 21], // was identical to '9' (missing the 13th itself) — fixed
   'min11':   [0, 3, 7, 10, 17],
   '7alt':    [0, 4, 8, 10, 13],
+  // Tensions/alterations
+  '7♭9':     [0, 4, 7, 10, 13],
+  '7♯9':     [0, 4, 7, 10, 15],
+  '7♯11':    [0, 4, 7, 10, 18],
+  '9♯11':    [0, 4, 7, 10, 14, 18],
+  '13♯11':   [0, 4, 7, 10, 14, 18, 21],
+  '7♯5':     [0, 4, 8, 10],
+  'Maj7♯5':  [0, 4, 8, 11],
+  'Maj9♯11': [0, 4, 7, 11, 14, 18],
+  'm6/9':    [0, 3, 7, 9, 14],
+  'mMaj9':   [0, 3, 7, 11, 14],
+  'ø9':      [0, 3, 6, 10, 14],
+  '9sus4':   [0, 5, 7, 10, 14],
+  '13sus4':  [0, 5, 7, 10, 14, 21],
 };
 
 function midiToHz(midi) {
@@ -1162,6 +1220,13 @@ function pickerSyncUI() {
   updatePickerPreview();
 }
 
+function pickerClearTypedInput() {
+  const input = document.getElementById('pickerTypedChord');
+  const statusEl = document.getElementById('pickerTypedStatus');
+  if (input) input.value = '';
+  if (statusEl) statusEl.style.display = 'none';
+}
+
 function openPicker(index) {
   pickerIndex = index;
   pickerActiveHalf = 1;
@@ -1172,6 +1237,7 @@ function openPicker(index) {
   document.getElementById('pickerHalfTabs').style.display = bar.second ? 'flex' : 'none';
   document.getElementById('pickerHalfBtn1').classList.add('active');
   document.getElementById('pickerHalfBtn2').classList.remove('active');
+  pickerClearTypedInput();
 
   pickerSyncUI();
   modal.classList.add('open');
@@ -1197,6 +1263,7 @@ function pickerToggleSplit(checked) {
     document.getElementById('pickerHalfBtn1').classList.add('active');
     document.getElementById('pickerHalfBtn2').classList.remove('active');
   }
+  pickerClearTypedInput();
   pickerSyncUI();
   renderGrid();
 }
@@ -1205,6 +1272,7 @@ function pickerSetActiveHalf(half) {
   pickerActiveHalf = half;
   document.getElementById('pickerHalfBtn1').classList.toggle('active', half === 1);
   document.getElementById('pickerHalfBtn2').classList.toggle('active', half === 2);
+  pickerClearTypedInput();
   pickerSyncUI();
 }
 
@@ -1232,6 +1300,52 @@ function pickerRandom() {
     const bar = progression[pickerIndex];
     progression[pickerIndex] = { ...rnd, second: bar.second || null };
   }
+  pickerSyncUI();
+}
+
+// Like parseChordString, but reports exactly what it couldn't recognize
+// instead of silently falling back to a dominant 7th — the typed-input box
+// needs the user to know when something didn't land, not a quiet guess.
+function pickerApplyTypedChord() {
+  if (pickerIndex === null) return;
+  const input = document.getElementById('pickerTypedChord');
+  const statusEl = document.getElementById('pickerTypedStatus');
+  const raw = (input.value || '').trim();
+  if (!raw) return;
+
+  const rootMatch = raw.match(/^([A-Ga-g][b#]?)/);
+  if (!rootMatch) {
+    statusEl.textContent = `Couldn't find a root note in "${raw}" — start with a letter A-G, optionally followed by b or #.`;
+    statusEl.style.display = 'block';
+    return;
+  }
+  const rootStr = rootMatch[1][0].toUpperCase() + rootMatch[1].slice(1);
+  const rootIdx = CHORD_ROOT_MAP[rootStr];
+  if (rootIdx === undefined) {
+    statusEl.textContent = `"${rootStr}" isn't a note I recognize.`;
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  let qualStr = raw.slice(rootMatch[1].length).trim();
+  if (qualStr === '' || qualStr.toLowerCase() === 'maj' || qualStr === 'M') qualStr = 'Maj';
+  const qualName = CHORD_QUALITY_MAP[qualStr] || CHORD_QUALITY_MAP[qualStr.toLowerCase()];
+  const quality = QUALITIES.find(q => q.name === qualName);
+  if (!quality) {
+    statusEl.textContent = `Don't recognize the quality "${qualStr}" — try things like maj7, m9, 7#11, m6/9, dim7, sus4.`;
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  const parsed = { root: rootIdx, quality };
+  if (pickerActiveHalf === 2) {
+    progression[pickerIndex].second = parsed;
+  } else {
+    const bar = progression[pickerIndex];
+    progression[pickerIndex] = { ...parsed, second: bar.second || null };
+  }
+  statusEl.style.display = 'none';
+  input.value = '';
   pickerSyncUI();
 }
 
@@ -1529,7 +1643,21 @@ const CHORD_QUALITY_MAP = {
     'sus2': 'Sus2',
     '13': '13', 'dom13': '13',
     'min11': 'min11', 'm11': 'min11',
-    'alt': '7alt', '7alt': '7alt'
+    'alt': '7alt', '7alt': '7alt',
+    // Tensions/alterations
+    '7b9': '7♭9',
+    '7#9': '7♯9',
+    '7#11': '7♯11',
+    '9#11': '9♯11',
+    '13#11': '13♯11',
+    '7#5': '7♯5', '7+5': '7♯5',
+    'maj7#5': 'Maj7♯5', 'M7#5': 'Maj7♯5',
+    'maj9#11': 'Maj9♯11', 'M9#11': 'Maj9♯11',
+    'm6/9': 'm6/9', 'min6/9': 'm6/9', 'm69': 'm6/9',
+    'mmaj9': 'mMaj9', 'mM9': 'mMaj9',
+    'm9b5': 'ø9', 'ø9': 'ø9', 'halfdim9': 'ø9',
+    '9sus4': '9sus4', '9sus': '9sus4',
+    '13sus4': '13sus4', '13sus': '13sus4'
 };
 
 function parseChordString(str) {
