@@ -354,6 +354,29 @@
     color: var(--amber);
   }
 
+  .chord-card.split {
+    flex-direction: row;
+    padding: 14px 6px;
+    gap: 0;
+  }
+  .chord-half {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+  }
+  .chord-half:first-child {
+    border-right: 1px solid var(--border);
+  }
+  .chord-half .chord-root {
+    font-size: 1.15rem;
+  }
+  .chord-half .chord-quality {
+    font-size: 0.6rem;
+  }
+
   /* HINT */
   .hint {
     font-size: 0.62rem;
@@ -757,6 +780,16 @@
       <button class="picker-close" onclick="closePicker()">✕</button>
     </div>
 
+    <label class="check-label" style="display:flex; align-items:center; gap:8px; margin-bottom:10px; cursor:pointer; font-size:0.85rem;">
+      <input type="checkbox" id="pickerSplitToggle" onchange="pickerToggleSplit(this.checked)">
+      Split this bar into 2 chords
+    </label>
+
+    <div class="picker-half-tabs" id="pickerHalfTabs" style="display:none; gap:8px; margin-bottom:12px;">
+      <button class="chord-filter-btn active" id="pickerHalfBtn1" onclick="pickerSetActiveHalf(1)">1st half</button>
+      <button class="chord-filter-btn" id="pickerHalfBtn2" onclick="pickerSetActiveHalf(2)">2nd half</button>
+    </div>
+
     <div class="picker-section-label">Root</div>
     <div class="picker-roots" id="pickerRoots"></div>
 
@@ -1023,6 +1056,7 @@ let progression = [];
 let isPlaying = false;
 let currentBeat = -1;
 let beatTimer = null;
+let splitChordTimer = null; // second half of a split bar — separate from beatTimer so both get cleared on stop
 let bpm = 60;
 let savedProgressions = JSON.parse(localStorage.getItem('chordLooper_saved') || '[]');
 let metronomeEnabled = false;
@@ -1072,15 +1106,30 @@ function renderGrid() {
     const card = document.createElement('div');
     let classes = 'chord-card';
     if (i === currentBeat) classes += ' active';
+    if (chord.second) classes += ' split';
 
     card.className = classes;
-    card.innerHTML = `
-      <span class="chord-number">${i + 1}</span>
-      <span class="chord-root">${noteNames()[chord.root]}</span>
-      <span class="chord-quality">${chord.quality.display}</span>
-    `;
+    if (chord.second) {
+      card.innerHTML = `
+        <span class="chord-number">${i + 1}</span>
+        <div class="chord-half">
+          <span class="chord-root">${noteNames()[chord.root]}</span>
+          <span class="chord-quality">${chord.quality.display}</span>
+        </div>
+        <div class="chord-half">
+          <span class="chord-root">${noteNames()[chord.second.root]}</span>
+          <span class="chord-quality">${chord.second.quality.display}</span>
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <span class="chord-number">${i + 1}</span>
+        <span class="chord-root">${noteNames()[chord.root]}</span>
+        <span class="chord-quality">${chord.quality.display}</span>
+      `;
+    }
     card.onclick = () => swapChord(i);
-    
+
     grid.appendChild(card);
   });
 }
@@ -1091,21 +1140,40 @@ function swapChord(index) {
 
 // ── Chord Picker ──────────────────────────────────────────────────────
 let pickerIndex = null;
+let pickerActiveHalf = 1; // 1 or 2 — which half of a split bar is being edited
 
-function openPicker(index) {
-  pickerIndex = index;
-  const chord = progression[index];
-  const modal = document.getElementById('chordPicker');
+// The chord object currently being edited — the bar itself, or its
+// "second" chord when a split bar has half 2 active.
+function pickerTargetChord() {
+  if (pickerIndex === null) return null;
+  const bar = progression[pickerIndex];
+  return (pickerActiveHalf === 2 && bar.second) ? bar.second : bar;
+}
 
-  // Highlight current root
+function pickerSyncUI() {
+  const chord = pickerTargetChord();
+  if (!chord) return;
   document.querySelectorAll('.picker-root').forEach(btn => {
     btn.classList.toggle('selected', parseInt(btn.dataset.root) === chord.root);
   });
-  // Highlight current quality
   document.querySelectorAll('.picker-quality').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.quality === chord.quality.name);
   });
+  updatePickerPreview();
+}
 
+function openPicker(index) {
+  pickerIndex = index;
+  pickerActiveHalf = 1;
+  const bar = progression[index];
+  const modal = document.getElementById('chordPicker');
+
+  document.getElementById('pickerSplitToggle').checked = !!bar.second;
+  document.getElementById('pickerHalfTabs').style.display = bar.second ? 'flex' : 'none';
+  document.getElementById('pickerHalfBtn1').classList.add('active');
+  document.getElementById('pickerHalfBtn2').classList.remove('active');
+
+  pickerSyncUI();
   modal.classList.add('open');
 }
 
@@ -1114,43 +1182,69 @@ function closePicker() {
   pickerIndex = null;
 }
 
-function pickerSetRoot(rootIdx) {
-  document.querySelectorAll('.picker-root').forEach(btn => {
-    btn.classList.toggle('selected', parseInt(btn.dataset.root) === rootIdx);
-  });
-  if (pickerIndex !== null) {
-    progression[pickerIndex] = { ...progression[pickerIndex], root: rootIdx };
-    updatePickerPreview();
+function pickerToggleSplit(checked) {
+  if (pickerIndex === null) return;
+  const bar = progression[pickerIndex];
+  if (checked) {
+    // Start the second half as a copy of the first — a sensible default
+    // rather than a jarring blank slot.
+    bar.second = { root: bar.root, quality: bar.quality };
+    document.getElementById('pickerHalfTabs').style.display = 'flex';
+  } else {
+    bar.second = null;
+    document.getElementById('pickerHalfTabs').style.display = 'none';
+    pickerActiveHalf = 1;
+    document.getElementById('pickerHalfBtn1').classList.add('active');
+    document.getElementById('pickerHalfBtn2').classList.remove('active');
   }
+  pickerSyncUI();
+  renderGrid();
+}
+
+function pickerSetActiveHalf(half) {
+  pickerActiveHalf = half;
+  document.getElementById('pickerHalfBtn1').classList.toggle('active', half === 1);
+  document.getElementById('pickerHalfBtn2').classList.toggle('active', half === 2);
+  pickerSyncUI();
+}
+
+function pickerSetRoot(rootIdx) {
+  const chord = pickerTargetChord();
+  if (!chord) return;
+  chord.root = rootIdx;
+  pickerSyncUI();
 }
 
 function pickerSetQuality(qualityName) {
   const quality = QUALITIES.find(q => q.name === qualityName);
-  if (!quality || pickerIndex === null) return;
-  document.querySelectorAll('.picker-quality').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.quality === qualityName);
-  });
-  progression[pickerIndex] = { ...progression[pickerIndex], quality };
-  updatePickerPreview();
+  const chord = pickerTargetChord();
+  if (!quality || !chord) return;
+  chord.quality = quality;
+  pickerSyncUI();
 }
 
 function pickerRandom() {
   if (pickerIndex === null) return;
-  progression[pickerIndex] = randomChord();
-  const chord = progression[pickerIndex];
-  document.querySelectorAll('.picker-root').forEach(btn => {
-    btn.classList.toggle('selected', parseInt(btn.dataset.root) === chord.root);
-  });
-  document.querySelectorAll('.picker-quality').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.quality === chord.quality.name);
-  });
-  updatePickerPreview();
+  const rnd = randomChord();
+  if (pickerActiveHalf === 2) {
+    progression[pickerIndex].second = rnd;
+  } else {
+    const bar = progression[pickerIndex];
+    progression[pickerIndex] = { ...rnd, second: bar.second || null };
+  }
+  pickerSyncUI();
 }
 
 function updatePickerPreview() {
   if (pickerIndex === null) return;
-  const chord = progression[pickerIndex];
-  document.getElementById('pickerPreview').textContent = `${noteNames()[chord.root]} ${chord.quality.display}`;
+  const bar = progression[pickerIndex];
+  const mainLabel = `${noteNames()[bar.root]} ${bar.quality.display}`;
+  if (bar.second) {
+    const secondLabel = `${noteNames()[bar.second.root]} ${bar.second.quality.display}`;
+    document.getElementById('pickerPreview').textContent = `${mainLabel} | ${secondLabel}`;
+  } else {
+    document.getElementById('pickerPreview').textContent = mainLabel;
+  }
   renderGrid();
 }
 
@@ -1229,13 +1323,24 @@ function startLoop() {
     }
     renderGrid();
     const chord = progression[currentBeat];
-    playChord(chord.root, chord.quality.name, secPerChord * 0.95);
 
-    // Update chord start time and restart metronome clicks in sync
+    // Metronome always ticks a normal 4-beat bar regardless of a split —
+    // only the chord sound changes mid-bar, the pulse doesn't.
     chordStartTime = Date.now();
     if (metronomeEnabled) {
       stopMetronomeClicks();
       scheduleMetronomeBeats(msPerBeat);
+    }
+
+    clearTimeout(splitChordTimer);
+    if (chord.second) {
+      const halfMs = msPerChord / 2;
+      playChord(chord.root, chord.quality.name, (halfMs / 1000) * 0.95);
+      splitChordTimer = setTimeout(() => {
+        playChord(chord.second.root, chord.second.quality.name, (halfMs / 1000) * 0.95);
+      }, halfMs);
+    } else {
+      playChord(chord.root, chord.quality.name, secPerChord * 0.95);
     }
 
     beatTimer = setTimeout(advance, msPerChord);
@@ -1266,6 +1371,8 @@ function stopLoop() {
   isPlaying = false;
   clearTimeout(beatTimer);
   beatTimer = null;
+  clearTimeout(splitChordTimer);
+  splitChordTimer = null;
   stopMetronomeClicks();
   currentBeat = -1;
   const btn = document.getElementById('btnPlayStop');
@@ -1449,10 +1556,21 @@ function parseChordString(str) {
 }
 
 // Parses a full comma-separated chord list string, returning a progression
-// array (empty if nothing valid was found).
+// array (empty if nothing valid was found). A bar can hold two chords by
+// separating them with "|", e.g. "Dm7,G7|Cmaj7,Fmaj7" — bar 2 splits into
+// G7 for the first half and Cmaj7 for the second.
 function parseChordListString(chordsStr) {
-    const chordStrings = (chordsStr || '').split(',').map(s => s.trim()).filter(Boolean);
-    return chordStrings.map(parseChordString).filter(Boolean);
+    const barStrings = (chordsStr || '').split(',').map(s => s.trim()).filter(Boolean);
+    return barStrings.map(barStr => {
+        if (barStr.includes('|')) {
+            const [firstStr, secondStr] = barStr.split('|').map(s => s.trim());
+            const first = parseChordString(firstStr);
+            const second = secondStr ? parseChordString(secondStr) : null;
+            if (!first) return null;
+            return second ? { ...first, second } : first;
+        }
+        return parseChordString(barStr);
+    }).filter(Boolean);
 }
 
 // Applies a parsed progression to the app state and re-renders.
