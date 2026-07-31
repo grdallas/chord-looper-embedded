@@ -18,6 +18,8 @@
     --green: #1a5c2a;
     --green-light: rgba(26, 92, 42, 0.08);
     --active-bg: #fff9f0;
+    --ink-faint: #a89880;
+    --accent-light: rgba(200, 132, 26, 0.08);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -804,6 +806,19 @@
   </div>
 
   <div class="chord-grid" id="chordGrid"></div>
+
+  <div class="controls-bar" style="margin-top: 16px;">
+    <button class="btn-save" onclick="saveProgression()">Save Progression</button>
+    <span class="save-flash" id="saveFlash">Saved</span>
+  </div>
+
+  <div class="saved-section">
+    <div class="saved-header">
+      <span class="saved-title">Saved Progressions</span>
+      <button class="btn-clear-all" onclick="clearAll()">Clear All</button>
+    </div>
+    <div id="savedList"></div>
+  </div>
 
   <div style="margin-top: 24px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.68rem; color: var(--ink-muted); text-align: center;">
     Electric piano: Wurlitzer EP200 samples by <a href="http://www.sullivang.net/" target="_blank" rel="noopener" style="color: inherit;">Greg Sullivan</a>, licensed <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener" style="color: inherit;">CC BY 3.0</a>.
@@ -1743,10 +1758,10 @@ function loadProgression(id) {
     root: c.root,
     quality: QUALITIES.find(q => q.name === c.quality) || QUALITIES[0]
   }));
-  // Update count buttons
-  document.querySelectorAll('.count-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.n) === chordCount);
-  });
+  const barSlider = document.getElementById('barSlider');
+  const barCount = document.getElementById('barCount');
+  if (barSlider) barSlider.value = chordCount;
+  if (barCount) barCount.textContent = chordCount;
   renderGrid();
 }
 
