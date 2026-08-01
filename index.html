@@ -642,8 +642,14 @@
     font-size: 0.58rem;
     color: var(--ink-faint);
     white-space: nowrap;
-    align-self: flex-start;
-    margin-top: 2px;
+  }
+
+  .saved-item-title {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 3px;
   }
 
   /* ── CHORD PICKER MODAL ─────────────────────────────────────────── */
@@ -849,6 +855,7 @@
   <div class="chord-grid" id="chordGrid"></div>
 
   <div class="controls-bar" style="margin-top: 16px;">
+    <input type="text" id="saveTitleInput" class="text-input-field" placeholder="Title (optional) — e.g. Giant Steps" style="flex:1; max-width:280px;" onkeydown="if(event.key==='Enter') saveProgression();">
     <button class="btn-save" onclick="saveProgression()">Save Progression</button>
     <span class="save-flash" id="saveFlash">Saved</span>
   </div>
@@ -1761,18 +1768,20 @@ function stopLoop() {
 
 // SAVE
 function saveProgression() {
+  const titleInput = document.getElementById('saveTitleInput');
   const entry = {
-    id: Date.now(),
+    id: Date.now(), // also doubles as the save date/time — see renderSaved()
+    title: (titleInput.value || '').trim(),
     chords: progression.map(c => {
       const bar = { root: c.root, quality: c.quality.name };
       if (c.second) bar.second = { root: c.second.root, quality: c.second.quality.name };
       return bar;
     }),
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
   savedProgressions.unshift(entry);
   localStorage.setItem('chordLooper_saved', JSON.stringify(savedProgressions));
   renderSaved();
+  titleInput.value = '';
 
   const flash = document.getElementById('saveFlash');
   flash.classList.add('show');
@@ -1829,25 +1838,25 @@ function renderSaved() {
   savedProgressions.forEach(entry => {
     const item = document.createElement('div');
     item.className = 'saved-item';
-    const pill = (root, qualityName) => {
-      const q = QUALITIES.find(q => q.name === qualityName);
-      const display = q ? q.display : qualityName;
-      return `<span class="saved-chord-pill"><span class="root">${noteNames()[root]}</span><span class="quality"> ${display}</span></span>`;
-    };
-    const chordsHtml = entry.chords.map(c => {
-      const first = pill(c.root, c.quality);
-      return c.second ? first + pill(c.second.root, c.second.quality) : first;
-    }).join('');
+    // id doubles as the save date/time (Date.now()) — no separate
+    // timestamp field needed, and this works for entries saved before
+    // titles existed too.
+    const d = new Date(entry.id);
+    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const titleEl = document.createElement('div');
+    titleEl.className = 'saved-item-title';
+    titleEl.textContent = entry.title || 'Untitled';
     item.innerHTML = `
       <div style="flex:1">
-        <div class="saved-chords">${chordsHtml}</div>
-        <div class="saved-timestamp">${entry.timestamp}</div>
+        <div class="saved-timestamp">${dateStr} · ${timeStr}</div>
       </div>
       <div class="saved-item-actions">
         <button class="btn-load" onclick="loadProgression(${entry.id})">Load</button>
         <button class="btn-delete" onclick="deleteProgression(${entry.id})">✕</button>
       </div>
     `;
+    item.querySelector('div').prepend(titleEl);
     list.appendChild(item);
   });
   container.appendChild(list);
